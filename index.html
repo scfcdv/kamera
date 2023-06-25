@@ -1,72 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf8">
-  <link rel="icon" href="https://scfcdv.github.io/homeweb2/favicon.ico">
   <title>カメラ</title>
-  <style>
-  canvas, video{
-    border: 1px solid gray;
-  }
-  </style>
+  <link rel="icon" href="https://scfcdv.github.io/homeweb2/favicon.ico">
 </head>
 <body>
-<video id="camera" width="900" height="600"></video>
-<canvas id="picture" width="900" height="600"></canvas>
-<form>
-  <button type="button" id="shutter">撮影</button>
-</form>
-<script>
-window.onload = () => {
-  const video  = document.querySelector("#camera");
-  const canvas = document.querySelector("#picture");
-  const se     = document.querySelector('#se');
-  /** カメラ設定 */
-  const constraints = {
-    audio: false,
-    video: {
-      width: 300,
-      height: 200,
-      facingMode: "user"   // フロントカメラを利用する
-      // facingMode: { exact: "environment" }  // リアカメラを利用する場合
-    }
-  };
-  /**
-   * カメラを<video>と同期
-   */
-  navigator.mediaDevices.getUserMedia(constraints)
-  .then( (stream) => {
-    video.srcObject = stream;
-    video.onloadedmetadata = (e) => {
-      video.play();
-    };
-  })
-  .catch( (err) => {
-    console.log(err.name + ": " + err.message);
-  });
-  /**
-   * シャッターボタン
-   */
-   document.querySelector("#shutter").addEventListener("click", () => {
-    const ctx = canvas.getContext("2d");
+  <video id="camera-preview" autoplay></video>
+  <canvas id="captured-image" style="display: none;"></canvas>
+  <button id="capture-button">撮影</button>
+  <div id="gallery"></div>
 
-    // 演出的な目的で一度映像を止めてSEを再生する
-    video.pause();
-    se.play();
-    setTimeout( () => {
-      video.play();    // カメラ再開
-    }, 500);
-    // canvasに画像を貼り付ける
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  });
-};
-</script>
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-143297-8"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'UA-143297-8');
-</script>
+  <script>
+    var videoElement = document.getElementById('camera-preview');
+    var canvasElement = document.getElementById('captured-image');
+    var captureButton = document.getElementById('capture-button');
+    var galleryElement = document.getElementById('gallery');
+
+    // カメラを取得してビデオ要素に表示する
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(function(stream) {
+        videoElement.srcObject = stream;
+      })
+      .catch(function(error) {
+        console.log('カメラのアクセスに失敗しました: ', error);
+      });
+
+    // 撮影ボタンのクリックイベント
+    captureButton.addEventListener('click', function() {
+      // ビデオフレームをキャプチャして静止画を作成
+      var context = canvasElement.getContext('2d');
+      context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+      // キャプチャした静止画を新しい<img>要素として追加表示する
+      var capturedImageElement = document.createElement('img');
+      capturedImageElement.src = canvasElement.toDataURL();
+      capturedImageElement.classList.add('captured-image');
+      galleryElement.appendChild(capturedImageElement);
+
+      // ダウンロードボタンを追加する
+      var downloadButton = document.createElement('a');
+      downloadButton.href = capturedImageElement.src;
+      downloadButton.download = 'captured_image.png';
+      downloadButton.textContent = 'ダウンロード';
+      capturedImageElement.insertAdjacentElement('afterend', downloadButton);
+    });
+  </script>
+
+  <style>
+    .captured-image {
+      display: block;
+      margin: 10px;
+    }
+  </style>
 </body>
 </html>
